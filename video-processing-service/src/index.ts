@@ -1,33 +1,75 @@
 import express from 'express';
 import ffmpeg from 'fluent-ffmpeg';
+import {
+  setupDirectories,
+  downloadRawVideo,
+  processRawVideo,
+  uploadProcessedVideo,
+  deleteRawVideo,
+  deleteProcessedVideo,
+} from './storage';
+
+setupDirectories();
 
 const app = express();
 app.use(express.json());
 
-app.post('/video', (req, res) => {
-  console.log(req.body);
-  const { inputFilePath, outputFilePath } = req.body;
-
-  if (!inputFilePath || !outputFilePath) {
-    res.status(404).send('File path not found');
+// Process a video file from Cloud Storage into 360p
+app.post('/video', async (req, res) => {
+  // Get the bucket and fileName from Cloud pub/sub message
+  let data;
+  try {
+    const message = Buffer.from(req.body.message.data, 'base64').toString('utf8');
+    data = JSON.parse(message)
+    if (!data.name) {
+      throw new Error('Invalid message payload received.');
+    }
+  } 
+  catch (err) {
+    console.error(err);
+    res.status(400).send('Bad Request: missing filename.');
   }
-  ffmpeg(inputFilePath)
-  // -vf indicates video file, scale is to rescale the video
-  .outputOptions(['-vf', 'scale=-1:360'])
-  .on('end', () => {
-    console.log('Processing video finished');
-    res.status(200).send('Processing video finished');
-  })
-  .on('error', (error) => {
-    console.log(`Internal server error: ${error.message}`)
-    res.status(500).send(`Internal server error: ${error.message}`);
-  })
-  .save(outputFilePath);
+
+  const inputFileName = data.name;
+  const outputFileName = `processed-${inputFileName}`;
+
+  try {
+    await downloadRawVideo(inputFileName);
+  } catch (err) {
+    await deleteRawVideo(inputFileName);
+    res.status(500).send('Processing Failed');
+  }
+
+  try {
+    await processRawVideo(inputFileName, outputFileName);
+  } catch (err) {
+    await Promise.all([
+      deleteRawVideo(inputFileName),
+      deleteProcessedVideo(outputFileName)
+    ])
+    res.status(500).send('Processing failed');
+  }
+  try {
+    await uploadProcessedVideo(outputFileName);
+  } catch (err) {
+    await Promise.all([
+      deleteRawVideo(inputFileName),
+      deleteProcessedVideo(outputFileName)
+    ])
+    res.status(500).send('processing failed');
+  }
+
+  await Promise.all([
+    deleteRawVideo(inputFileName),
+    deleteProcessedVideo(outputFileName)
+  ])
+
+  res.status(200).send(`Processing video successfully`);
 })
 
-app.get('/', (req, res) => {
-  res.send('Hello World');
-});
+// app.get('/', (req, res) => {
+//   res.send('Hello World');
+// });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

@@ -13,6 +13,7 @@
   "author": "Ying Tu",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/storage": "^7.0.1",
     "express": "^4.18.2",
     "fluent-ffmpeg": "^2.1.2"
   },

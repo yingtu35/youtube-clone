@@ -34,7 +34,7 @@ export const downloadRawVideo = async (fileName: string): Promise<void> => {
         .download(options)
     
       console.log(
-        `gs://${rawVideoBucketName}/${fileName} downloaded to ${options.destination}.`
+        `gs://${rawVideoBucketName}/${fileName} downloaded to ${localRawVideoPath}/${fileName}.`
       );
       resolve()
     } catch (err) {

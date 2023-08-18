@@ -1,0 +1,14 @@
+.signButton {
+  border: 1px solid grey;
+  color: #065fd4;
+  border-radius: 24px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.signButton:hover {
+  background-color: #bee0fd;
+  border: 1px solid transparent;
+}

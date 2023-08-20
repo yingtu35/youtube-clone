@@ -7,6 +7,10 @@ import {
   deleteRawVideo,
   deleteProcessedVideo,
 } from './storage';
+import { 
+  isVideoNew,
+  setVideo,
+} from './firestore';
 
 setupDirectories();
 
@@ -29,8 +33,21 @@ app.post('/video', async (req, res) => {
     res.status(400).send('Bad Request: missing filename.');
   }
 
-  const inputFileName = data.name;
+  const inputFileName = data.name; // <uid>-<timestamp>.<extension>
   const outputFileName = `processed-${inputFileName}`;
+  const videoId = inputFileName.split('.')[0];
+
+  if (!isVideoNew(videoId)) {
+    console.log(`Video ${videoId} has already been processed`);
+    res.status(400).send('Bad Request: Video already processed');
+  }
+
+  await setVideo(videoId, {
+    id: videoId,
+    uid: inputFileName.split('-')[0],
+    status: 'processing',
+    date: new Date(),
+  });
 
   try {
     await downloadRawVideo(inputFileName);
@@ -55,8 +72,13 @@ app.post('/video', async (req, res) => {
       deleteRawVideo(inputFileName),
       deleteProcessedVideo(outputFileName)
     ])
-    res.status(500).send('processing failed');
+    res.status(500).send('Processing failed');
   }
+
+  await setVideo(videoId, {
+    status: 'processed',
+    fileName: outputFileName,
+  });
 
   await Promise.all([
     deleteRawVideo(inputFileName),

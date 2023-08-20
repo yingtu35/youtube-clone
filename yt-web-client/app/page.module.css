@@ -1,0 +1,10 @@
+.videosContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.thumbnail {
+  margin: 10px;
+  border-radius: 10px;
+}

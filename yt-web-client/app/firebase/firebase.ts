@@ -1,5 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
+import { getFunctions } from "firebase/functions";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User } from "firebase/auth";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -18,6 +19,7 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+export const functions = getFunctions(app);
 const auth = getAuth(app);
 auth.useDeviceLanguage();
 
@@ -44,7 +46,7 @@ export const signOut = () => {
 /**
  * The `onAuthStateChangedHelper` function is a TypeScript helper function that takes a callback
  * function as a parameter and returns the result of calling `onAuthStateChanged` with the `auth`
- * object and the callback.
+ * object and the callback. Set an authentication state observer and get user data
  * @param callback - A function that takes a user object or null as its parameter and returns void.
  * This function will be called whenever the authentication state changes.
  * @returns a unsubscribe callback function.
